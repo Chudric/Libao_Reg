@@ -77,7 +77,7 @@ function startProcess() {
 function callFirstAPI() {
     // Use JavaScript to make the first API request
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/https://m.mallcoo.cn/api/user/GraphicVcode/Get", true);
+    xhr.open("POST", "https://m.mallcoo.cn/api/user/GraphicVcode/Get", true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.setRequestHeader("authority", "m.mallcoo.cn");
     xhr.setRequestHeader("accept", "application/json, text/plain, */*");
@@ -193,7 +193,7 @@ function getCaptchaCode() {
 
         // Use JavaScript to make the second API request
         var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/https://m.mallcoo.cn/api/user/User/GetCode", true);
+        xhr.open("POST", "https://m.mallcoo.cn/api/user/User/GetCode", true);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("authority", "m.mallcoo.cn");
         xhr.setRequestHeader("accept", "application/json, text/plain, */*");
@@ -320,7 +320,7 @@ function freeMobile() {
 function callFinalAPI(code) {
     // Use JavaScript to make the final API request
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "/https://m.mallcoo.cn/api/user/User/RegisterIsLogin", true);
+    xhr.open("POST", "https://m.mallcoo.cn/api/user/User/RegisterIsLogin", true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.setRequestHeader("authority", "m.mallcoo.cn");
     xhr.setRequestHeader("accept", "application/json, text/plain, */*");
@@ -384,7 +384,7 @@ function getRandomBirthday() {
 
 function lastCall(token, phoneNumber) {
     // Replace the URL with your actual service endpoint
-    var lastCallUrl = "/https://m.mallcoo.cn/api/user/user/OpenOrBindCard";
+    var lastCallUrl = "https://m.mallcoo.cn/api/user/user/OpenOrBindCard";
 
     // Create a new XMLHttpRequest object
     var xhr = new XMLHttpRequest();
