@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reegggggg</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #toast {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #333;
+            color: #fff;
+            padding: 12px;
+            border-radius: 4px;
+        }
+
+        #tokenResult {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<div id="result"></div>
+<br>
+<button onclick="initiateRegistrationProcess()">开始注册</button>
+
+
+
+<!-- 添加用于显示toast的div -->
+<div id="toast"></div>
+
+<!-- 放置token的新位置 -->
+<div id="tokenResult"></div>
+
+<script>
+var keyword = "";
+var Image = "";
+var v_code = "";
+var phoneNumber = ""; // Variable to store the dynamically obtained phone number
+var smsCheckInterval; // Interval for checking SMS verification code
+var isChecking = true;
+var attemptCount = 0;
+
+function initiateRegistrationProcess() {
+    // 保留原来的 startProcess() 逻辑
+    startProcess();
+}
+
+
+// 添加按键事件处理函数
+document.onkeydown = function(event) {
+    event = event || window.event;
+    // 检测按键是否为 Enter 键的键码是 13
+    if (event.keyCode === 13) {
+        initiateRegistrationProcess();
+    }
+};
+
+function startProcess() {
+    attemptCount = 0;
+    // Call the first API
+    callFirstAPI();
+}
+
+function callFirstAPI() {
+    // Use JavaScript to make the first API request
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/https://m.mallcoo.cn/api/user/GraphicVcode/Get", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("authority", "m.mallcoo.cn");
+    xhr.setRequestHeader("accept", "application/json, text/plain, */*");
+    xhr.setRequestHeader("accept-language", "zh-CN,zh;q=0.9");
+    xhr.setRequestHeader("origin", "https://m.mallcoo.cn");
+    xhr.setRequestHeader("referer", "https://m.mallcoo.cn/v/index/identity?redirectUrl=https%253A%252F%252Fm.mallcoo.cn%252Fv%252Fpark%252Findex%252Findex%253Fmid%253D11192%2526_ops_id%253D5%2526_ops_data%253D&mid=11192");
+    xhr.setRequestHeader("user-agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1");
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            // Handle the first API's response
+            var response = JSON.parse(xhr.responseText);
+            if (response.m === 1) {
+                // Get Image and Keyword
+                keyword = response.d.Keyword;
+
+                // Display Image on the page
+                Image = response.d.Image;
+                displayImage(response.d.Image);
+
+                // Call the second API after displaying the image
+                callSecondAPI();
+                setTimeout(checkSMSCode, 3000); // Wait for 3 seconds before checking SMS code
+            } else {
+                // Handle API call failure
+                alert("API调用失败");
+            }
+        }
+    };
+
+    // Replace with your request body data
+    var requestData = {
+        "MallID": "11192",
+        "Scene": 1,
+        "Type": 2,
+        "Width": 60,
+        "Height": 30
+    };
+    xhr.send(JSON.stringify(requestData));
+}
+
+// 第二个 API 请求
+function callSecondAPI() {
+    console.log("callSecondAPI() is called");
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/https://yzmcolor.market.alicloudapi.com/yzmSpeed", true);
+    xhr.setRequestHeader("Authorization", "APPCODE c1c7d8a6704d4668ae9d5b376258041d");
+    xhr.setRequestHeader("User-Agent", "Apifox/1.0.0 (https://apifox.com)");
+    xhr.setRequestHeader("Accept", "*/*");
+    xhr.setRequestHeader("Host", "yzmcolor.market.alicloudapi.com");
+    xhr.setRequestHeader("Connection", "keep-alive");
+    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+    var secondAPIUrl = 'https://yzmcolor.market.alicloudapi.com/yzmSpeed';
+    var secondAPIHeaders = {
+        'Authorization': 'APPCODE c1c7d8a6704d4668ae9d5b376258041d',
+        'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
+        'Accept': '*/*',
+        'Host': 'yzmcolor.market.alicloudapi.com',
+        'Connection': 'keep-alive',
+        'Content-Type': 'application/x-www-form-urlencoded'
+    };
+
+    var secondAPIBody = 'v_pic=' + Image;
+    console.log("secondAPIBody:", secondAPIBody);
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            // Handle the first API's response
+            var response = JSON.parse(xhr.responseText);
+            console.log("response:", response);
+            if (response.msg === "查询成功!") {
+                v_code = response.v_code;
+                console.log("v_code:", v_code);
+                getCaptchaCode();
+            } else {
+                // Handle API call failure
+                alert("API调用失败");
+            }
+        }
+    };
+    xhr.send(secondAPIBody);
+}
+
+
+function fetchPhoneNumber() {
+    // Replace the URL with your actual service endpoint
+    var serviceUrl = 'http://api.sqhyw.net:90/api/get_mobile?token=NHmFP8kz9soHdWlFD/Hg+Kxen2pHSuw0q7Wi+hNODzrUpmi7ZXWtuOR/jR+lNm6CjHreVdXd832ar4q+/mnG3Tov0zeNNvwPtXW/jUgTXvqFRoLXoUxA+UcHcS6FbfoYOVEN6oeFrKJCm+k73gqByy6GOp1XuUiPjbSQ38/98Qc=&project_id=788283';
+
+    return fetch(serviceUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.mobile) {
+                // Set the phoneNumber global variable
+                phoneNumber = data.mobile;
+                return phoneNumber;
+            } else {
+                throw new Error('Failed to fetch phone number');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching phone number:', error);
+            throw error;
+            setTimeout(startProcess, 2000);
+        });
+}
+
+
+function getCaptchaCode() {
+
+    // Use your service to fetch the phone number dynamically
+    fetchPhoneNumber().then(phoneNumber => {
+
+        // Use JavaScript to make the second API request
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/https://m.mallcoo.cn/api/user/User/GetCode", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("authority", "m.mallcoo.cn");
+        xhr.setRequestHeader("accept", "application/json, text/plain, */*");
+        xhr.setRequestHeader("accept-language", "zh-CN,zh;q=0.9");
+        xhr.setRequestHeader("origin", "https://m.mallcoo.cn");
+        xhr.setRequestHeader("referer", "https://m.mallcoo.cn/v/index/identity?redirectUrl=https%253A%252F%252Fm.mallcoo.cn%252Fv%252Fpark%252Findex%252Findex%253Fmid%253D11192%2526_ops_id%253D5%2526_ops_data%253D&mid=11192");
+        xhr.setRequestHeader("user-agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1");
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                // Handle the second API's response
+                var response = JSON.parse(xhr.responseText);
+                if (response.e) {
+                    // Show the toast
+                    showToast(response.e);
+                    setTimeout(startProcess, 2000);
+                } else {
+                    // Show success message
+                    showToast("获取成功");
+                }
+            }
+        };
+
+        // Replace with your request body data
+        var requestData = {
+            "MallID": "11192",
+            "Mobile": phoneNumber,
+            "SMSType": 1,
+            "Scene": 1,
+            "GraphicType": 2,
+            "Keyword": keyword, // Use the keyword obtained in the startProcess function
+            "GraphicVCode": v_code
+        };
+        xhr.send(JSON.stringify(requestData));
+    });
+}
+
+function fetchSMSCode() {
+    // Replace the URL with your actual service endpoint
+    var smsServiceUrl = `http://api.sqhyw.net:90/api/get_message?token=NHmFP8kz9soHdWlFD/Hg+Kxen2pHSuw0q7Wi+hNODzrUpmi7ZXWtuOR/jR+lNm6CjHreVdXd832ar4q+/mnG3Tov0zeNNvwPtXW/jUgTXvqFRoLXoUxA+UcHcS6FbfoYOVEN6oeFrKJCm+k73gqByy6GOp1XuUiPjbSQ38/98Qc=&project_id=788283&phone_num=${phoneNumber}`;
+
+    return fetch(smsServiceUrl)
+        .then(response => {
+            if (response.status === 502) {
+                // If status is 502, wait for 2000 milliseconds and then restart the process
+                console.log('状态502了')
+                setTimeout(startProcess, 2000);
+                return null;
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data && data.message === "ok") {
+                return data;
+            } else {
+                return null;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching SMS code:', error);
+            startProcess();
+            console.log("未获取到短信"); // 在这里添加输出信息到控制台
+            throw error;
+        });
+}
+
+
+
+function checkSMSCode() {
+
+    // Define a function that performs the SMS code check
+    function performCheck() {
+        // Increment the attempt count
+        attemptCount++;
+        console.log(attemptCount)
+
+        // Use your service to fetch SMS verification code dynamically
+        fetchSMSCode().then(response => {
+            if (response && response.message === "ok") {
+                // Extract the code from the main response
+                var code = response.code;
+
+                // Use the obtained code and other parameters to call the final API
+                callFinalAPI(code);
+            } else {
+                // Continue checking if the message is not "OK"
+                console.log("短信还未到达，请继续获取");
+
+                // Check if the attempt count is 9
+                if (attemptCount === 9) {
+                    // After 10 attempts, call the specified API and start the process
+                    freeMobile();
+                } else {
+                    // Schedule the next check after 3 seconds
+                    setTimeout(performCheck, 5000);
+                }
+            }
+        });
+    }
+
+    // Start the initial check
+    performCheck();
+}
+
+function freeMobile() {
+    // Replace the URL with your actual service endpoint
+    var freeUrl = `http://api.sqhyw.net:90/api/free_mobile?token=cxevvSXBS4DpFD92vQvS1neYU+VRQnHEIctOUna1xQUU5ASS/P1wYHU0AMYoGl2WWj2me2sCRguL9c0cBYiPcZ/rvSyblJjIz2VqHOIxNL0wYF6J645OMy1XqGe9Rv4PRl4MwHMcrf8rRd7A7k0cg5yYeDa2EwxY/+zeqgyxD60=&project_id=788283&phone_num=${phoneNumber}`;
+
+    fetch(freeUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === "ok") {
+                // Start the process again after fetching the message
+                startProcess();
+            } else {
+                console.log("已释放手机号");
+            }
+        })
+        .catch(error => {
+            console.error('手机号释放失败:', error);
+        });
+}
+
+function callFinalAPI(code) {
+    // Use JavaScript to make the final API request
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/https://m.mallcoo.cn/api/user/User/RegisterIsLogin", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("authority", "m.mallcoo.cn");
+    xhr.setRequestHeader("accept", "application/json, text/plain, */*");
+    xhr.setRequestHeader("accept-language", "zh-CN,zh;q=0.9");
+    xhr.setRequestHeader("origin", "https://m.mallcoo.cn");
+    xhr.setRequestHeader("referer", "https://m.mallcoo.cn/v/index/identity?redirectUrl=https%253A%252F%252Fm.mallcoo.cn%252Fv%252Fpark%252Findex%252Findex%253Fmid%253D11192%2526_ops_id%253D5%2526_ops_data%253D&mid=11192");
+    xhr.setRequestHeader("user-agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1");
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            // Handle the final API's response
+            var response = JSON.parse(xhr.responseText);
+
+            // If the response contains the Token field, call lastCall function
+            if (response.d && response.d.Token) {
+                lastCall(response.d.Token, phoneNumber);
+            }
+        }
+    };
+
+    // Replace with your request body data
+    var requestData = {
+        "MallID": "11192",
+        "Mobile": phoneNumber,
+        "SNSType": "",
+        "OauthID": null,
+        "Pwd": "",
+        "Keyword": keyword,
+        "VCode": code,
+        "LoginType": 2,
+        "Scene": 4,
+        "GraphicType": 2,
+        "GraphicVCode": v_code,
+        "BusinessSourceID": 5,
+        "DataSource": 3
+    };
+    xhr.send(JSON.stringify(requestData));
+}
+
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function getRandomChineseName() {
+    // Generate a random Chinese name with 3 characters
+    var name = "";
+    for (var i = 0; i < 3; i++) {
+        var unicode = getRandomInt(0x4e00, 0x9fff);
+        name += String.fromCharCode(unicode);
+    }
+    return name;
+}
+
+function getRandomBirthday() {
+    // Generate a random birthday between 1960-01-01 and 2000-12-31
+    var year = getRandomInt(1960, 2000);
+    var month = getRandomInt(1, 12);
+    var day = getRandomInt(1, 28); // Assuming all months have 28 days for simplicity
+    return year + '-' + (month < 10 ? '0' : '') + month + '-' + (day < 10 ? '0' : '') + day;
+}
+
+function lastCall(token, phoneNumber) {
+    // Replace the URL with your actual service endpoint
+    var lastCallUrl = "/https://m.mallcoo.cn/api/user/user/OpenOrBindCard";
+
+    // Create a new XMLHttpRequest object
+    var xhr = new XMLHttpRequest();
+
+    // Configure it: POST-request, endpoint URL
+    xhr.open("POST", lastCallUrl, true);
+
+    // Set the request headers
+    xhr.setRequestHeader("accept", "application/json, text/plain, */*");
+    xhr.setRequestHeader("accept-language", "zh-CN,zh;q=0.9");
+    xhr.setRequestHeader("content-type", "application/json");
+    xhr.setRequestHeader("sec-fetch-dest", "empty");
+    xhr.setRequestHeader("sec-fetch-mode", "cors");
+    xhr.setRequestHeader("sec-fetch-site", "same-origin");
+    xhr.setRequestHeader("sgm-context", "108012111001413120;108012111001413120");
+
+    
+    // Generate random name and birthday
+    var randomName = getRandomChineseName();
+    var randomBirthday = getRandomBirthday();
+
+    // Define the request body
+    var requestBody = JSON.stringify({
+        "MallID": "11192",
+        "Mobile": phoneNumber,
+        "mcSetting": "{\"UserName\":\"" + randomName + "\",\"Gender\":\"1\",\"Birthday\":\"" + randomBirthday + "\",\"ProvincialAreas\":'{\"ProvinceID\":110000,\"CityID\":110100,\"DistrictsID\":110101,\"Province\":\"北京市\",\"City\":\"北京市\",\"Districts\":\"东城区\"}',\"Remark3\":\"有一个子女\",\"Marital\":\"\"}",
+        "RefID": "",
+        "SNSType": "",
+        "DataSource": 3,
+        "OauthID": null,
+        "MiniOpenID": null,
+        "BusinessSourceID": 5,
+        "InvitedUID": null,
+        "Header": {
+            "Token": token
+        }
+    });
+
+    // Set the callback function to handle the response
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            // Handle the API response
+            var response = JSON.parse(xhr.responseText);
+            console.log(response.d.Token);
+            // Display the token on the page
+            if (response.d && response.d.Token) {
+            // 在页面上显示令牌
+            displayToken(response.d.Token);
+
+            // 等待2000毫秒（2秒），然后再次调用startProcess
+            setTimeout(startProcess, 2000);
+        } else if (response.m === 307) {
+            // 如果m字段为307，则等待2000毫秒（2秒）后再次调用startProcess
+            setTimeout(startProcess, 2000);
+        }
+        }
+    };
+
+    // Send the request with the defined body
+    xhr.send(requestBody);
+}
+
+
+function displayToken(token) {
+    // Display the token on the page
+    var tokenResultDiv = document.getElementById("tokenResult");
+
+    // Create a new div element for the token
+    var tokenDiv = document.createElement("div");
+
+    // Generate a unique identifier for the token
+    var tokenId = "Token" + (tokenResultDiv.children.length + 1);
+
+    // Set the content of the token div
+    tokenDiv.textContent = tokenId + ": " + token;
+
+    // Enable copying the token
+    tokenDiv.addEventListener("click", function () {
+        copyToClipboard(token);
+    });
+
+    // Append the token div to the result div
+    tokenResultDiv.appendChild(tokenDiv);
+
+    // Show a toast indicating successful copying
+    showToast("Token copied to clipboard");
+}
+
+
+function copyToClipboard(text) {
+    // Create a temporary input element
+    var tempInput = document.createElement("input");
+    tempInput.value = text;
+
+    // Append the input element to the document
+    document.body.appendChild(tempInput);
+
+    // Select the input content
+    tempInput.select();
+    tempInput.setSelectionRange(0, 99999); /*For mobile devices*/
+
+    // Copy the selected text
+    document.execCommand("copy");
+
+    // Remove the temporary input element
+    document.body.removeChild(tempInput);
+
+    // Show a toast indicating successful copying
+    showToast("Token copied to clipboard");
+}
+
+
+function displayImage(imageSrc) {
+    // Display Image on the page
+    var resultDiv = document.getElementById("result");
+    var imgElement = document.createElement("img");
+    imgElement.src = imageSrc;
+    resultDiv.innerHTML = ""; // Clear previous content
+    resultDiv.appendChild(imgElement);
+}
+
+function showToast(message) {
+    // Get the toast element
+    var toast = document.getElementById("toast");
+
+    // Set the toast text content
+    toast.innerHTML = message;
+
+    // Show the toast
+    toast.style.display = "block";
+
+    // Hide the toast after 2 seconds
+    setTimeout(function () {
+        toast.style.display = "none";
+    }, 2000);
+}
+
+</script>
+
+</body>
+</html>
